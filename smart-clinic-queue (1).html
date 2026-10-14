@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Clinic Queue</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#14212b;--mid:#5b6b78;--line:#d8dfe5;--fill:#eaeff3;--acc:#0b6bcb;--accd:#084f98;--accl:#dcebfa;--ok:#157347;--okl:#dff3e8;--warn:#8a5a00;--warnl:#fdf0cf;--err:#b3261e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e151b;--card:#17212a;--ink:#e8eef3;--mid:#9aabb8;--line:#2b3a46;--fill:#1f2c36;--acc:#5aa6f2;--accd:#8cc2f7;--accl:#16324d;--ok:#5fd394;--okl:#14301f;--warn:#f0c15c;--warnl:#3a2e10;--err:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e151b;--card:#17212a;--ink:#e8eef3;--mid:#9aabb8;--line:#2b3a46;--fill:#1f2c36;--acc:#5aa6f2;--accd:#8cc2f7;--accl:#16324d;--ok:#5fd394;--okl:#14301f;--warn:#f0c15c;--warnl:#3a2e10;--err:#ff8a80;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#app{max-width:440px;min-height:100vh;margin:0 auto;background:var(--bg);position:relative;padding:20px 18px 96px}
+h1{font-size:1.75rem;line-height:1.15;margin:4px 0 6px}
+h2{font-size:1.15rem;margin:22px 0 10px}
+p{margin:0 0 10px}
+.mid{color:var(--mid)}.small{font-size:.85rem}
+.brand{font-weight:700;color:var(--acc);font-size:.9rem}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.btn{display:block;width:100%;min-height:52px;border-radius:12px;border:2px solid var(--acc);background:var(--acc);color:#fff;font-weight:700;padding:12px;margin-top:12px}
+:root[data-theme="dark"] .btn:not(.sec),:root:not([data-theme="light"]) .btn:not(.sec){color:#06223d}
+.btn.sec{background:transparent;color:var(--acc)}
+.btn.danger{border-color:var(--err);color:var(--err);background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.back{background:none;border:0;color:var(--acc);font-weight:600;padding:8px 0;margin-bottom:4px;min-height:44px}
+.search{width:100%;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:0 14px;font:inherit}
+.chips{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.chip{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:.9rem}
+.chip[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+:root[data-theme="dark"] .chip[aria-pressed=true],:root:not([data-theme="light"]) .chip[aria-pressed=true]{color:#06223d}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;width:100%;text-align:left;display:block}
+button.card:hover{border-color:var(--acc)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pill{display:inline-block;padding:3px 10px;border-radius:14px;font-size:.8rem;font-weight:700;background:var(--accl);color:var(--acc)}
+.pill.ok{background:var(--okl);color:var(--ok)}.pill.warn{background:var(--warnl);color:var(--warn)}
+.opt{display:flex;gap:12px;align-items:center;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;width:100%;text-align:left}
+.opt[aria-pressed=true]{border-color:var(--acc);background:var(--accl)}
+.dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.opt[aria-pressed=true] .dot{background:var(--acc);border-color:var(--acc);color:#fff}
+label.f{display:block;font-weight:600;font-size:.9rem;margin:14px 0 6px}
+.err{color:var(--err);font-size:.85rem;margin-top:4px;min-height:1.2em}
+.channels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.channels .opt{flex-direction:column;text-align:center;padding:12px 6px;margin:0;font-weight:600;font-size:.9rem}
+.check{display:flex;gap:10px;align-items:flex-start;margin:16px 0;font-size:.9rem}
+.check input{width:22px;height:22px;flex:none;margin-top:2px}
+.ticket{background:var(--acc);color:#fff;border-radius:20px;padding:22px 16px;text-align:center}
+:root[data-theme="dark"] .ticket,:root:not([data-theme="light"]) .ticket{color:#06223d}
+.ticket .no{font-size:3.6rem;font-weight:800;letter-spacing:1px;line-height:1.1}
+.ticket .tag{display:inline-block;background:rgba(0,0,0,.2);border-radius:14px;padding:4px 12px;font-size:.85rem;margin-top:6px}
+.big{font-size:1.9rem;font-weight:800;line-height:1.15}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:var(--fill);border-radius:14px;padding:12px}
+.bar{height:10px;border-radius:5px;background:var(--fill);overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);transition:width .6s}
+.banner{border-radius:14px;padding:14px;margin-bottom:12px;background:var(--warnl);color:var(--ink);width:100%;text-align:left;border:0}
+.banner.go{background:var(--okl)}
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:440px;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav button{flex:1;min-height:60px;background:none;border:0;font-size:.8rem;font-weight:600;color:var(--mid);position:relative}
+.nav button[aria-current=page]{color:var(--acc)}
+.nav b{display:block;font-size:1.15rem}
+.badge{position:absolute;top:6px;left:56%;background:var(--err);color:#fff;border-radius:10px;font-size:.7rem;padding:0 6px}
+.msg{border-radius:14px;padding:12px;background:var(--card);border:1px solid var(--line);margin-bottom:10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));width:calc(100% - 28px);max-width:410px;background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 14px;z-index:20;font-size:.9rem;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;z-index:30;padding:20px}
+.modal div{background:var(--card);border-radius:16px;padding:20px;max-width:360px;width:100%}
+.lang{float:right;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;padding:0 8px;margin-left:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<script>
+const CLINICS=[
+ {id:1,name:'Mamelodi Community Clinic',dist:1.2,close:'16:00',waiting:18},
+ {id:2,name:'Eersterust Clinic',dist:3.4,close:'16:00',waiting:31},
+ {id:3,name:'Pretoria West Clinic',dist:5.0,close:'19:00',waiting:9},
+ {id:4,name:'Atteridgeville Clinic',dist:7.8,close:'16:00',waiting:44}];
+const SERVICES=[
+ {id:'gen',l:'A',name:'General consultation',desc:'Illness, injuries and check-ups',min:4},
+ {id:'chr',l:'B',name:'Chronic medication',desc:'Repeat scripts and collection',min:3},
+ {id:'fp',l:'C',name:'Family planning',desc:'Contraception and counselling',min:3},
+ {id:'imm',l:'D',name:'Immunisation',desc:'Baby and child vaccines',min:3},
+ {id:'hiv',l:'E',name:'HIV testing and counselling',desc:'Confidential testing',min:4},
+ {id:'mat',l:'F',name:'Maternal care',desc:'Antenatal and postnatal visits',min:5}];
+const CH=['SMS','WhatsApp','App'];
+const KEY='scq-state-v1';
+let S={lang:'en',code:'',view:'home',filter:'near',q:'',clinic:null,service:null,name:'',phone:'',chan:'SMS',consent:false,errs:{},ticket:null,alerts:[],unread:0,modal:false};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.ticket){S.ticket=s.ticket;S.alerts=s.alerts||[];S.unread=s.unread||0;S.view='ticket'}}catch(e){}
+try{S.lang=localStorage.getItem('scq-lang')||'en'}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({ticket:S.ticket,alerts:S.alerts,unread:S.unread}))}catch(e){}}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=m=>m<=0?'Now':m<60?m+' min':Math.floor(m/60)+' h '+(m%60?m%60+' min':'');
+const clinic=id=>CLINICS.find(c=>c.id===id), svc=id=>SERVICES.find(s=>s.id===id);
+const go=v=>{S.view=v;if(v==='alerts'){S.unread=0;save()}render();window.scrollTo(0,0)};
+function toast(m){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=tr(m);document.body.appendChild(t);setTimeout(()=>t.remove(),4200)}
+
+
+/* ---------- Translations: [English, isiZulu, Setswana, Afrikaans] ---------- */
+const DICT=[
+["Find a clinic","Thola umtholampilo","Batla kliniki","Vind 'n kliniek"],
+["Join the queue from home. We'll tell you when to leave.","Joyina umugqa usekhaya. Sizokutshela ukuthi ungaphuma nini.","Tsena mo mothalong o le kwa gae. Re tla go bolelela gore o tshwanetse go tswa leng.","Sluit by die tou van die huis af. Ons sal jou sê wanneer om te vertrek."],
+["Search","Sesha","Batla","Soek"],
+["Clinic name","Igama lomtholampilo","Leina la kliniki","Klinieknaam"],
+["Nearby","Eduze","Gaufi","Naby"],
+["Open now","Kuvuliwe manje","E bulegile jaanong","Nou oop"],
+["Shortest wait","Ukulinda okufushane","Nako e khutshwane","Kortste wag"],
+["‹ Back","‹ Emuva","‹ Morago","‹ Terug"],
+["‹ My ticket","‹ Ithikithi lami","‹ Thekete ya me","‹ My kaartjie"],
+["Select service","Khetha insiza","Tlhopha tirelo","Kies diens"],
+["What do you need today?","Udingani namuhla?","O tlhoka eng gompieno?","Wat het jy vandag nodig?"],
+["General consultation","Ukubonana nodokotela jikelele","Kgakololo ya kakaretso","Algemene konsultasie"],
+["Chronic medication","Imithi yezifo ezingamahlalakhona","Meriana ya malwetse a a sa foleng","Chroniese medikasie"],
+["Family planning","Ukuhlela umndeni","Thulaganyo ya lelapa","Gesinsbeplanning"],
+["Immunisation","Ukugoma","Phemelo","Immunisering"],
+["HIV testing and counselling","Ukuhlolwa kwe-HIV nokwelulekwa","Tlhatlhobo ya HIV le kgakololo","MIV-toetsing en berading"],
+["Maternal care","Ukunakekelwa kwabesifazane abakhulelwe","Tlhokomelo ya basadi ba baimileng","Moederssorg"],
+["Illness, injuries and check-ups","Ukugula, ukulimala nokuhlolwa","Malwetse, dipotsolo le ditlhatlhobo","Siekte, beserings en gesondheidskontroles"],
+["Repeat scripts and collection","Imithi eqhubekayo nokuyilanda","Meriana e e tswelelang le go e tsaya","Herhaalvoorskrifte en afhaal"],
+["Contraception and counselling","Indlela yokuvimbela inzalo nokweluleka","Thibelo ya boimana le kgakololo","Gebruiksbeheer en berading"],
+["Baby and child vaccines","Imijovo yezingane","Ditlhabelo tsa masea le bana","Entstowwe vir babas en kinders"],
+["Confidential testing","Ukuhlolwa okuyimfihlo","Tlhatlhobo ya sephiri","Vertroulike toetsing"],
+["Antenatal and postnatal visits","Ukuvakashela ngaphambi nangemuva kokubeletha","Ditirelo pele le morago ga go belega","Voor- en nageboortelike besoeke"],
+["Estimated wait:","Isikhathi esilindelekile:","Nako e e akantsweng:","Geskatte wagtyd:"],
+["Continue","Qhubeka","Tswelela","Gaan voort"],
+["Your details","Imininingwane yakho","Dintlha tsa gago","Jou besonderhede"],
+["We only use these to tell you about your place in the queue.","Siyisebenzisela ukukutshela ngendawo yakho emugqeni kuphela.","Re di dirisa fela go go bolelela ka lefelo la gago mo mothalong.","Ons gebruik dit net om jou van jou plek in die tou te vertel."],
+["Full name","Igama eliphelele","Leina le le feletseng","Volle naam"],
+["e.g. Thandi Mokoena","isb. Thandi Mokoena","sk. Thandi Mokoena","bv. Thandi Mokoena"],
+["Mobile number","Inombolo yefoni","Nomore ya mogala","Selfoonnommer"],
+["How should we notify you?","Singakwazisa kanjani?","Re go itsise jang?","Hoe moet ons jou in kennis stel?"],
+["I agree to receive queue notifications. My details stay private.","Ngiyavuma ukuthola izaziso zomugqo. Imininingwane yami ihlala iyimfihlo.","Ke dumela go amogela dikitsiso tsa mothalo. Dintlha tsa me di sala e le sephiri.","Ek stem in om tounotifikasies te ontvang. My besonderhede bly privaat."],
+["Join queue","Joyina umugqa","Tsena mo mothalong","Sluit by die tou aan"],
+["Enter your full name.","Faka igama lakho eliphelele.","Kwala leina la gago le le feletseng.","Voer jou volle naam in."],
+["Enter a South African number, like 082 123 4567.","Faka inombolo yaseNingizimu Afrika, njenge-082 123 4567.","Kwala nomore ya Aforika Borwa, jaaka 082 123 4567.","Voer 'n Suid-Afrikaanse nommer in, soos 082 123 4567."],
+["Tick the box to get queue notifications.","Maka ibhokisi ukuze uthole izaziso zomugqo.","Tobetsa lebokose go amogela dikitsiso tsa mothalo.","Merk die blokkie om tounotifikasies te ontvang."],
+["My queue","Umugqa wami","Mothalo wa me","My tou"],
+["You're not in a queue.","Awusemugqeni.","Ga o mo mothalong.","Jy is nie in 'n tou nie."],
+["Pick a clinic and a service to get a queue number.","Khetha umtholampilo nensiza ukuthola inombolo yomugqo.","Tlhopha kliniki le tirelo go bona nomore ya mothalo.","Kies 'n kliniek en diens om 'n tounommer te kry."],
+["It's your turn!","Isikhathi sakho!","Ke nako ya gago!","Dit is jou beurt!"],
+["It's your turn","Isikhathi sakho","Ke nako ya gago","Dit is jou beurt"],
+["Time to head to the clinic.","Isikhathi sokuya emtholampilo.","Ke nako ya go ya kwa kliniki.","Tyd om kliniek toe te gaan."],
+["Time to head to the clinic","Isikhathi sokuya emtholampilo","Ke nako ya go ya kwa kliniki","Tyd om kliniek toe te gaan"],
+["Tap for directions and check-in","Thinta ukuthola izikhombisi nokubhalisa","Ama go bona tsela le go ikwadisa","Tik vir aanwysings en inteken"],
+["Your queue number","Inombolo yakho yomugqo","Nomore ya gago ya mothalo","Jou tounommer"],
+["Estimated wait","Isikhathi esilindelekile","Nako e e akantsweng","Geskatte wagtyd"],
+["Now","Manje","Jaanong","Nou"],
+["Based on the current queue and usual clinic pace","Kusekelwe kumugqo wamanje nesivinini esijwayelekile somtholampilo","E ikaegile ka mothalo wa jaanong le lebelo le le tlwaelegileng la kliniki","Gebaseer op die huidige tou en gewone kliniektempo"],
+["People ahead","Abantu abangaphambi kwakho","Batho ba ba pele ga gago","Mense voor jou"],
+["Now serving","Okhonjiswa manje","Go thusiwa jaanong","Word nou bedien"],
+["Travel time to clinic: about 25 min","Isikhathi sokuhamba siye emtholampilo: cishe imizuzu engu-25","Nako ya loeto go ya kliniki: bekete metsotso e le 25","Reistyd na kliniek: ongeveer 25 min"],
+["Demo: skip ahead 5 places","Isibonelo: eqa izindawo ezi-5","Sekao: tlola mafelo a le 5","Demo: spring 5 plekke vooruit"],
+["Leave queue","Shiya umugqa","Tswa mo mothalong","Verlaat die tou"],
+["Leave the queue?","Ushiya umugqa?","A o tswa mo mothalong?","Verlaat die tou?"],
+["Keep my place","Gcina indawo yami","Boloka lefelo la me","Hou my plek"],
+["Home","Ikhaya","Gae","Tuis"],
+["Alerts","Izaziso","Dikitsiso","Kennisgewings"],
+["These are the messages you'd get on your phone.","Yimiyalezo ozoyithola efonini yakho.","Ke melaetsa e o tla e amogela mo mogaleng wa gago.","Dit is die boodskappe wat jy op jou foon sal kry."],
+["No alerts yet.","Azikabikho izaziso.","Ga go na dikitsiso go ise go ke go nne.","Nog geen kennisgewings nie."],
+["Join a queue and we'll message you as your turn gets closer.","Joyina umugqa sizokuthumelela umyalezo njengoba isikhathi sakho sisondela.","Tsena mo mothalong, re tla go romela molaetsa fa nako ya gago e atamela.","Sluit by 'n tou aan en ons sal jou boodskappe stuur soos jou beurt nader kom."],
+["Go to Room 2 and show your number.","Yana egumbini 2 ubonise inombolo yakho.","Ya kwa Phaposing 2 o bontshe nomore ya gago.","Gaan na Kamer 2 en wys jou nommer."],
+["Your number","Inombolo yakho","Nomore ya gago","Jou nommer"],
+["I'm on my way","Ngiyeza","Ke tsamaya","Ek is op pad"],
+["The clinic knows you're on your way","Umtholampilo uyazi ukuthi uyeza","Kliniki e a itse gore o tsamaya","Die kliniek weet jy is op pad"],
+["I need more time","Ngidinga isikhathi esengeziwe","Ke tlhoka nako e nngwe","Ek het meer tyd nodig"],
+["When you arrive, check in at the kiosk or tell the queue marshal your number.","Uma ufika, bhalisa ekhiyoski noma utshele umgcini womugqo inombolo yakho.","Fa o goroga, ikwadise kwa kiosk kgotsa o bolelele molebedi wa mothalo nomore ya gago.","Wanneer jy aankom, teken by die kiosk in of sê vir die tougesel jou nommer."],
+["I've arrived: check in","Ngifikile: bhalisa","Ke goroge: ikwadise","Ek het aangekom: teken in"],
+["You're checked in","Usubhalisiwe","O ikwadisitse","Jy is ingeteken"],
+["Check in at clinic","Bhalisa emtholampilo","Ikwadise kwa kliniki","Teken by die kliniek in"],
+["Confirm you've arrived so the clinic knows you're here.","Qinisekisa ukuthi ufikile ukuze umtholampilo wazi ukuthi ulapha.","Netefatsa gore o goroge gore kliniki e itse gore o fa.","Bevestig dat jy aangekom het sodat die kliniek weet jy is hier."],
+["Scan the clinic QR code","Skena ikhodi ye-QR yomtholampilo","Sekena khoutu ya QR ya kliniki","Skandeer die kliniek se QR-kode"],
+["Scan QR code","Skena ikhodi ye-QR","Sekena khoutu ya QR","Skandeer QR-kode"],
+["Or enter the clinic code","Noma faka ikhodi yomtholampilo","Kgotsa kwala khoutu ya kliniki","Of voer die kliniek se kode in"],
+["Clinic code","Ikhodi yomtholampilo","Khoutu ya kliniki","Kliniekkode"],
+["Demo code: 4821","Ikhodi yesibonelo: 4821","Khoutu ya sekao: 4821","Demokode: 4821"],
+["Check in","Bhalisa","Ikwadise","Teken in"],
+["That code doesn't match. Check the sign at the clinic desk.","Leyo khodi ayifani. Hlola uphawu etafuleni lomtholampilo.","Khoutu eo ga e tshwane. Lebelela pontsho kwa tafoleng ya kliniki.","Daardie kode stem nie ooreen nie. Kyk na die bord by die kliniek se toonbank."],
+["No QR scanner? Tell the queue marshal your number.","Awunayo i-QR skena? Tshela umgcini womugqo inombolo yakho.","Ga o na sekena sa QR? Bolelela molebedi wa mothalo nomore ya gago.","Geen QR-skandeerder nie? Sê vir die tougesel jou nommer."],
+["Please sit in the waiting area. We'll call your number.","Sicela uhlale endaweni yokulinda. Sizobiza inombolo yakho.","Tsweetswee agama mo felong la go ema. Re tla bitsa nomore ya gago.","Sit asseblief in die wagarea. Ons sal jou nommer roep."],
+["Back to my queue","Buyela emugqeni wami","Boela kwa mothalong wa me","Terug na my tou"],
+["You left the queue.","Ushiye umugqa.","O tswile mo mothalong.","Jy het die tou verlaat."],
+["Thanks. The clinic knows you're on your way.","Siyabonga. Umtholampilo uyazi ukuthi uyeza.","Ke a leboga. Kliniki e a itse gore o tsamaya.","Dankie. Die kliniek weet jy is op pad."],
+["No problem. We moved you back 3 places.","Kulungile. Sikubuyisele emuva ngezindawo ezi-3.","Ga go na bothata. Re go busetse morago ka mafelo a le 3.","Geen probleem nie. Ons het jou 3 plekke terug geskuif."]
+];
+const RULES=[
+[/^(\d+) waiting right now$/,["$1 balindile manje","$1 ba letile jaanong","$1 wag nou"]],
+[/^(\d+) waiting$/,["$1 balindile","$1 ba letile","$1 wag"]],
+[/^About (.+)$/,["Cishe $1","Bekete $1","Ongeveer $1"]],
+[/^(.+) km · Open until (.+)$/,["$1 km · Kuvulwa kuze kube ngu-$2","$1 km · E bulegile go fitlha $2","$1 km · Oop tot $2"]],
+[/^(.+) km away · about 25 min$/,["$1 km ukusuka lapha · cishe imizuzu engu-25","$1 km go tswa fa · bekete metsotso e le 25","$1 km weg · ongeveer 25 min"]],
+[/^You're in a queue \((.+)\)\.$/,["Usemugqeni ($1).","O mo mothalong ($1).","Jy is in 'n tou ($1)."]],
+[/^(.+) · tap to view your ticket$/,["$1 · thinta ukubuka ithikithi lakho","$1 · ama go bona thekete ya gago","$1 · tik om jou kaartjie te sien"]],
+[/^No clinics match "(.*)"\. Try a shorter name\.$/,["Azikho izimtholampilo ezifana ne-“$1”. Zama igama elifushane.","Ga go na dikliniki tse di tshwanang le “$1”. Leka leina le le khutshwane.","Geen klinieke pas by “$1” nie. Probeer 'n korter naam."]],
+[/^We'll notify you by (.+) when it's time to leave\.$/,["Sizokwazisa nge-$1 uma sekuyisikhathi sokuhamba.","Re tla go itsise ka $1 fa e le nako ya go tsamaya.","Ons sal jou per $1 in kennis stel wanneer dit tyd is om te vertrek."]],
+[/^Go to Room 2 at (.+)\.$/,["Yana egumbini 2 e-$1.","Ya kwa Phaposing 2 kwa $1.","Gaan na Kamer 2 by $1."]],
+[/^You're about (\d+) patients? away\.$/,["Kusele iziguli ezingu-$1 ngaphambi kwakho.","Go setse balwetse ba le $1 pele ga gago.","Daar is ongeveer $1 pasiënte voor jou."]],
+[/^You'll lose your place \((.+)\)\. You can rejoin, but you'll go to the back\.$/,["Uzolahlekelwa yindawo yakho ($1). Ungajoyina futhi, kodwa uzoya ngasemuva.","O tla latlhegelwa ke lefelo la gago ($1). O ka tsena gape, mme o tla ya kwa morago.","Jy sal jou plek verloor ($1). Jy kan weer aansluit, maar jy gaan agter wees."]],
+[/^You're in the queue\. Your number is (.+)$/,["Usemugqeni. Inombolo yakho ngu-$1","O mo mothalong. Nomore ya gago ke $1","Jy is in die tou. Jou nommer is $1"]],
+[/^Update: about (.+) until your turn at (.+)\. We'll tell you when to leave\.$/,["Isibuyekezo: cishe $1 ngaphambi kokuthi isikhathi sakho e-$2. Sizokutshela ukuthi ungaphuma nini.","Tshedimosetso: bekete $1 pele ga nako ya gago kwa $2. Re tla go bolelela gore o tswe leng.","Opdatering: ongeveer $1 voor jou beurt by $2. Ons sal jou sê wanneer om te vertrek."]],
+[/^Time to leave! You are number (\d+) in line \((.+)\)\. Head to (.+) now\.$/,["Isikhathi sokuhamba! Ungumuntu wesi-$1 emugqeni ($2). Yana e-$3 manje.","Ke nako ya go tsamaya! O wa $1 mo mothalong ($2). Ya kwa $3 jaanong.","Tyd om te vertrek! Jy is nommer $1 in die tou ($2). Gaan nou na $3."]],
+[/^It's your turn \((.+)\)\. Please go to Room 2\.$/,["Isikhathi sakho ($1). Sicela uye egumbini 2.","Ke nako ya gago ($1). Tsweetswee ya kwa Phaposing 2.","Dit is jou beurt ($1). Gaan asseblief na Kamer 2."]]
+];
+const LI={zu:1,tn:2,af:3},MAP={};DICT.forEach(r=>MAP[r[0]]=r);
+function tr(s){const L=LI[S.lang];if(!L)return s;const k=s.trim();
+ if(MAP[k])return s.replace(k,()=>MAP[k][L]);
+ for(const [re,v] of RULES){const m=k.match(re);if(m)return s.replace(k,()=>v[L-1].replace(/\$(\d)/g,(_,i)=>m[i]))}
+ if(k.includes(' · '))return s.replace(k,()=>k.split(' · ').map(x=>tr(x)).join(' · '));
+ return s}
+function applyLang(){document.documentElement.lang=S.lang;if(S.lang==='en')return;
+ const w=document.createTreeWalker($('#app'),NodeFilter.SHOW_TEXT),ns=[];while(w.nextNode())ns.push(w.currentNode);
+ ns.forEach(n=>{if(n.nodeValue.trim())n.nodeValue=tr(n.nodeValue)});
+ document.querySelectorAll('#app [placeholder]').forEach(i=>i.placeholder=tr(i.placeholder))}
+function langBar(){return `<select id="lang" class="lang" aria-label="Language">${[['en','English'],['zu','isiZulu'],['tn','Setswana'],['af','Afrikaans']].map(l=>`<option value="${l[0]}" ${S.lang===l[0]?'selected':''}>${l[1]}</option>`).join('')}</select>`}
+
+function render(){
+ const v=S.view,t=S.ticket;let h=langBar();
+ if(v==='home'){
+  let list=CLINICS.filter(c=>c.name.toLowerCase().includes(S.q.toLowerCase()));
+  if(S.filter==='open')list=list.filter(c=>c.close!=='');
+  list=[...list].sort((a,b)=>S.filter==='short'?a.waiting-b.waiting:a.dist-b.dist);
+  h+=`<div class="brand">Smart Clinic Queue</div><h1>Find a clinic</h1><p class="mid">Join the queue from home. We'll tell you when to leave.</p>`;
+  if(t&&t.status!=='left')h+=`<button class="banner go" data-a="nav" data-v="ticket"><b>You're in a queue (${esc(t.no)}).</b><br><span class="small">${esc(clinic(t.clinic).name)} · tap to view your ticket</span></button>`;
+  h+=`<label class="f" for="q" style="margin-top:6px">Search</label><input id="q" class="search" type="search" placeholder="Clinic name" value="${esc(S.q)}">
+  <div class="chips" role="group" aria-label="Sort clinics">${[['near','Nearby'],['open','Open now'],['short','Shortest wait']].map(c=>`<button class="chip" data-a="filter" data-v="${c[0]}" aria-pressed="${S.filter===c[0]}">${c[1]}</button>`).join('')}</div>`;
+  h+=list.length?list.map(c=>`<button class="card" data-a="pick" data-v="${c.id}"><div class="row"><b>${esc(c.name)}</b><span aria-hidden="true">›</span></div><div class="mid small">${c.dist} km · Open until ${c.close}</div><div style="margin-top:8px"><span class="pill ${c.waiting<15?'ok':c.waiting>35?'warn':''}">About ${fmt(Math.round(c.waiting*3.5))}</span> <span class="small mid">${c.waiting} waiting</span></div></button>`).join(''):`<p class="mid">No clinics match "${esc(S.q)}". Try a shorter name.</p>`;
+ }
+ if(v==='service'){const c=clinic(S.clinic);
+  h+=`<button class="back" data-a="nav" data-v="home">‹ Back</button><h1>Select service</h1>
+  <div class="card"><b>${esc(c.name)}</b><div class="mid small">${c.waiting} waiting right now</div></div><h2 style="margin-top:8px">What do you need today?</h2>`;
+  h+=SERVICES.map(s=>`<button class="opt" data-a="svc" data-v="${s.id}" aria-pressed="${S.service===s.id}"><span class="dot">${S.service===s.id?'✓':''}</span><span><b>${s.name}</b><br><span class="mid small">${s.desc}</span></span></button>`).join('');
+  if(S.service)h+=`<p class="mid">Estimated wait: <b>${fmt(c.waiting*svc(S.service).min)}</b></p>`;
+  h+=`<button class="btn" data-a="nav" data-v="details" ${S.service?'':'disabled'}>Continue</button>`;
+ }
+ if(v==='details'){
+  h+=`<button class="back" data-a="nav" data-v="service">‹ Back</button><h1>Your details</h1><p class="mid">We only use these to tell you about your place in the queue.</p>
+  <label class="f" for="nm">Full name</label><input id="nm" class="search" autocomplete="name" placeholder="e.g. Thandi Mokoena" value="${esc(S.name)}"><div class="err">${S.errs.name||''}</div>
+  <label class="f" for="ph">Mobile number</label><input id="ph" class="search" type="tel" inputmode="tel" autocomplete="tel" placeholder="082 123 4567" value="${esc(S.phone)}"><div class="err">${S.errs.phone||''}</div>
+  <label class="f">How should we notify you?</label><div class="channels" role="group">${CH.map(c=>`<button class="opt" data-a="chan" data-v="${c}" aria-pressed="${S.chan===c}">${c}</button>`).join('')}</div>
+  <label class="check"><input type="checkbox" id="cs" ${S.consent?'checked':''}><span>I agree to receive queue notifications. My details stay private.</span></label><div class="err">${S.errs.consent||''}</div>
+  <div class="card mid small"><b style="color:var(--ink)">${esc(clinic(S.clinic).name)}</b><br>${svc(S.service).name}</div>
+  <button class="btn" data-a="join">Join queue</button>`;
+ }
+ if(v==='ticket'){
+  if(!t||t.status==='left'){h+=`<h1>My queue</h1><div class="card"><b>You're not in a queue.</b><p class="mid">Pick a clinic and a service to get a queue number.</p><button class="btn" data-a="nav" data-v="home">Find a clinic</button></div>`}
+  else{const c=clinic(t.clinic),s=svc(t.service),mins=t.ahead*s.min,pct=Math.round((t.start-t.ahead)/t.start*100);
+   h+=`<h1>My queue</h1>`;
+   if(t.ahead===0)h+=`<button class="banner go" data-a="nav" data-v="travel"><b>It's your turn!</b><br>Go to Room 2 at ${esc(c.name)}.</button>`;
+   else if(t.ahead<=6)h+=`<button class="banner go" data-a="nav" data-v="travel"><b>Time to head to the clinic.</b><br><span class="small">Tap for directions and check-in</span></button>`;
+   h+=`<div class="ticket"><div>Your queue number</div><div class="no">${esc(t.no)}</div><span class="tag">${s.name} · ${esc(c.name)}</span></div>
+   <div class="card" style="margin-top:12px"><div class="mid small">Estimated wait</div><div class="big">${t.ahead?'≈ '+fmt(mins):'Now'}</div><div class="mid small">Based on the current queue and usual clinic pace</div></div>
+   <div class="grid2"><div class="stat"><div class="mid small">People ahead</div><div class="big">${t.ahead}</div></div><div class="stat"><div class="mid small">Now serving</div><div class="big">${esc(s.l)}-${String(t.serving).padStart(3,'0')}</div></div></div>
+   <div class="bar" style="margin-top:14px" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Queue progress"><i style="width:${pct}%"></i></div>
+   <div class="card" style="margin-top:14px;background:var(--warnl)"><b>We'll notify you by ${t.chan} when it's time to leave.</b><div class="small mid">Travel time to clinic: about 25 min</div></div>
+   ${t.checkedIn?'<p class="pill ok" style="margin-top:12px">You\'re checked in</p>':(t.ahead<=6?'<button class="btn" data-a="nav" data-v="checkin">I\'ve arrived: check in</button>':'')}
+   <button class="btn sec" data-a="ff">Demo: skip ahead 5 places</button>
+   <button class="btn danger" data-a="leaveq">Leave queue</button>`}
+ }
+ if(v==='travel'&&t){const c=clinic(t.clinic),s=svc(t.service);
+  h+=`<button class="back" data-a="nav" data-v="ticket">‹ My ticket</button>
+  <div class="card" style="background:var(--okl)"><h1 style="margin:0;color:var(--ok)">${t.ahead===0?"It's your turn":'Time to head to the clinic'}</h1><p style="margin:6px 0 0">${t.ahead===0?'Go to Room 2 and show your number.':`You're about ${t.ahead} patient${t.ahead===1?'':'s'} away.`}</p></div>
+  <div class="card" style="height:150px;display:grid;place-items:center;text-align:center"><div><b>${esc(c.name)}</b><div class="mid small">${c.dist} km away · about 25 min</div></div></div>
+  <div class="grid2"><div class="stat"><div class="mid small">Your number</div><div class="big">${esc(t.no)}</div></div><div class="stat"><div class="mid small">Now serving</div><div class="big">${esc(s.l)}-${String(t.serving).padStart(3,'0')}</div></div></div>
+  ${t.enroute?`<p class="pill ok" style="margin-top:14px">The clinic knows you're on your way</p>`:`<button class="btn" data-a="enroute">I'm on my way</button>`}
+  ${t.checkedIn?'<p class="pill ok" style="margin-top:12px">You\'re checked in</p>':'<button class="btn" data-a="nav" data-v="checkin">I\'ve arrived: check in</button>'}
+  <button class="btn sec" data-a="late">I need more time</button>
+  <p class="mid small" style="margin-top:14px">When you arrive, check in at the kiosk or tell the queue marshal your number.</p>`;
+ }
+ if(v==='alerts'){
+  h+=`<h1>Alerts</h1><p class="mid">These are the messages you'd get on your phone.</p>`;
+  h+=S.alerts.length?S.alerts.map(a=>`<div class="msg"><div class="row"><span class="pill">${a.ch}</span><span class="small mid">${a.time}</span></div><p style="margin:8px 0 0">${esc(a.text)}</p></div>`).join(''):`<div class="card"><b>No alerts yet.</b><p class="mid" style="margin:4px 0 0">Join a queue and we'll message you as your turn gets closer.</p></div>`;
+ }
+ if(v==='checkin'&&t){
+  h+=`<button class="back" data-a="nav" data-v="travel">‹ Back</button><h1>Check in at clinic</h1>`;
+  if(t.checkedIn)h+=`<div class="card" style="background:var(--okl)"><h2 style="margin:0">You're checked in</h2><p style="margin:6px 0 0">Please sit in the waiting area. We'll call your number.</p></div><div class="ticket"><div>Your queue number</div><div class="no">${esc(t.no)}</div></div><button class="btn" data-a="nav" data-v="ticket">Back to my queue</button>`;
+  else h+=`<p class="mid">Confirm you've arrived so the clinic knows you're here.</p><div class="card"><b>Scan the clinic QR code</b><button class="btn" data-a="scanqr">Scan QR code</button></div><div class="card"><b>Or enter the clinic code</b><label class="f" for="cc">Clinic code</label><input id="cc" class="search" inputmode="numeric" maxlength="4" placeholder="0000" value="${esc(S.code)}"><div class="err">${S.errs.code||''}</div><div class="small mid">Demo code: 4821</div><button class="btn sec" data-a="code">Check in</button></div><p class="mid small">No QR scanner? Tell the queue marshal your number.</p>`;
+ }
+ if(['home','ticket','alerts','travel','checkin'].includes(v)){
+  h+=`<nav class="nav" aria-label="Main">${[['home','⌂','Home'],['ticket','🎫','My queue'],['alerts','🔔','Alerts']].map(n=>`<button data-a="nav" data-v="${n[0]}" ${(v===n[0]||((v==='travel'||v==='checkin')&&n[0]==='ticket'))?'aria-current="page"':''}><b aria-hidden="true">${n[1]}</b>${n[2]}${n[0]==='alerts'&&S.unread?`<span class="badge">${S.unread}</span>`:''}</button>`).join('')}</nav>`;
+ }
+ if(S.modal)h+=`<div class="modal" role="dialog" aria-modal="true" aria-label="Leave queue"><div><h2 style="margin-top:0">Leave the queue?</h2><p class="mid">You'll lose your place (${esc(t.no)}). You can rejoin, but you'll go to the back.</p><button class="btn danger" data-a="leave">Leave queue</button><button class="btn sec" data-a="stay">Keep my place</button></div></div>`;
+ $('#app').innerHTML=h;
+ applyLang();
+}
+
+function pushAlert(t,text){const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});S.alerts.unshift({ch:t.chan,text,time});if(S.view!=='alerts')S.unread++;toast(t.chan+': '+tr(text))}
+function check(t){const c=clinic(t.clinic).name;
+ if(t.ahead<=10&&!t.n1){t.n1=1;pushAlert(t,`Update: about ${fmt(t.ahead*svc(t.service).min)} until your turn at ${c}. We'll tell you when to leave.`)}
+ if(t.ahead<=6&&!t.n2){t.n2=1;pushAlert(t,`Time to leave! You are number ${t.ahead+1} in line (${t.no}). Head to ${c} now.`)}
+ if(t.ahead===0&&!t.n3){t.n3=1;pushAlert(t,`It's your turn (${t.no}). Please go to Room 2.`)}}
+function tick(n=1){const t=S.ticket;if(!t||t.status==='left')return;
+ for(let i=0;i<n&&t.ahead>0;i++){t.ahead--;t.serving++}
+ check(t);save();if(!['service','details'].includes(S.view))render()}
+setInterval(()=>tick(1),4000);
+
+document.addEventListener('input',e=>{
+ if(e.target.id==='q'){S.q=e.target.value;const p=e.target.selectionStart;render();const i=$('#q');i.focus();i.setSelectionRange(p,p)}
+ if(e.target.id==='nm')S.name=e.target.value;
+ if(e.target.id==='ph')S.phone=e.target.value;
+ if(e.target.id==='cc')S.code=e.target.value;
+ if(e.target.id==='cs')S.consent=e.target.checked});
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v,t=S.ticket;
+ if(a==='nav')go(v);
+ else if(a==='filter'){S.filter=v;render()}
+ else if(a==='pick'){S.clinic=+v;S.service=null;go('service')}
+ else if(a==='svc'){S.service=v;render()}
+ else if(a==='chan'){S.chan=v;render()}
+ else if(a==='join'){
+  const errs={},ph=S.phone.replace(/[\s-]/g,'');
+  if(S.name.trim().length<2)errs.name='Enter your full name.';
+  if(!/^(0\d{9}|\+27\d{9})$/.test(ph))errs.phone='Enter a South African number, like 082 123 4567.';
+  if(!S.consent)errs.consent='Tick the box to get queue notifications.';
+  S.errs=errs;
+  if(Object.keys(errs).length){render();return}
+  const c=clinic(S.clinic),s=svc(S.service),n=c.waiting+1;
+  S.ticket={clinic:c.id,service:s.id,no:s.l+'-'+String(n+24).padStart(3,'0'),serving:24,ahead:c.waiting,start:c.waiting,chan:S.chan,name:S.name.trim(),status:'waiting'};
+  S.alerts=[];S.unread=0;save();toast('You\'re in the queue. Your number is '+S.ticket.no);go('ticket')}
+ else if(a==='scanqr'||a==='code'){if(a==='code'&&S.code.trim()!=='4821'){S.errs={code:"That code doesn't match. Check the sign at the clinic desk."};render();return}S.errs={};t.checkedIn=1;S.code='';save();render()}
+ else if(a==='ff')tick(5);
+ else if(a==='leaveq'){S.modal=true;render()}
+ else if(a==='stay'){S.modal=false;render()}
+ else if(a==='leave'){S.modal=false;S.ticket=null;S.alerts=[];S.unread=0;S.name='';S.phone='';S.consent=false;save();toast('You left the queue.');go('home')}
+ else if(a==='enroute'){t.enroute=1;save();toast('Thanks. The clinic knows you\'re on your way.');render()}
+ else if(a==='late'){t.ahead+=3;t.start+=3;t.enroute=0;t.n2=0;save();toast('No problem. We moved you back 3 places.');go('ticket')}
+});
+document.addEventListener('change',e=>{if(e.target.id==='lang'){S.lang=e.target.value;try{localStorage.setItem('scq-lang',S.lang)}catch(err){}render();$('#lang').focus()}});
+render();
+</script>
+</body>
+</html>
