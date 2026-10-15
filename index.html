@@ -67,11 +67,17 @@ label.f{display:block;font-weight:600;font-size:.9rem;margin:14px 0 6px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;z-index:30;padding:20px}
 .modal div{background:var(--card);border-radius:16px;padding:20px;max-width:360px;width:100%}
 .lang{flex:none;width:104px;min-height:42px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:.8rem;padding:0 6px}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto}
+.tts-toggle{min-height:42px;border-radius:10px;border:1px solid var(--acc);background:var(--accl);color:var(--acc);padding:0 12px;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tts-toggle.speaking{background:var(--acc);color:#fff}
+.tts-status{font-size:.74rem;color:var(--mid);min-width:72px;text-align:right}
+@media (max-width:480px){.toolbar{gap:6px}.tts-status{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <main id="app" aria-live="polite"></main>
+<script src="speech.js"></script>
 <script>
 const CLINICS=[
  {id:1,name:'Mamelodi Community Clinic',dist:1.2,close:'16:00',waiting:18},
@@ -216,7 +222,7 @@ function applyLang(){document.documentElement.lang=S.lang;if(S.lang==='en')retur
 function langBar(){return `<select id="lang" class="lang" aria-label="Language">${[['en','English'],['zu','isiZulu'],['tn','Setswana'],['af','Afrikaans']].map(l=>`<option value="${l[0]}" ${S.lang===l[0]?'selected':''}>${l[1]}</option>`).join('')}</select>`}
 
 function render(){
- const v=S.view,t=S.ticket;let h=`<header class="topbar"><nav class="nav" aria-label="Main">${[['home','Home'],['ticket','My queue'],['alerts','Alerts']].map(n=>`<button data-a="nav" data-v="${n[0]}" ${(v===n[0]||(['service','details'].includes(v)&&n[0]==='home')||((v==='travel'||v==='checkin')&&n[0]==='ticket'))?'aria-current="page"':''}>${n[1]}${n[0]==='alerts'&&S.unread?`<span class="badge">${S.unread}</span>`:''}</button>`).join('')}</nav>${langBar()}</header>`;
+ const v=S.view,t=S.ticket;let h=`<header class="topbar"><nav class="nav" aria-label="Main">${[['home','Home'],['ticket','My queue'],['alerts','Alerts']].map(n=>`<button data-a="nav" data-v="${n[0]}" ${(v===n[0]||(['service','details'].includes(v)&&n[0]==='home')||((v==='travel'||v==='checkin')&&n[0]==='ticket'))?'aria-current="page"':''}>${n[1]}${n[0]==='alerts'&&S.unread?`<span class="badge">${S.unread}</span>`:''}</button>`).join('')}</nav><div class="toolbar">${langBar()}<button id="ttsToggle" class="tts-toggle" type="button" aria-label="Read aloud">🔊 Read aloud</button><span id="ttsStatus" class="tts-status" aria-live="polite"></span></div></header>`;
  if(v==='home'){
   let list=CLINICS.filter(c=>c.name.toLowerCase().includes(S.q.toLowerCase()));
   if(S.filter==='open')list=list.filter(c=>c.close!=='');
